@@ -38,45 +38,51 @@ public class JSONObject {
 		int beginIndex = -1;
 		int colonIndex = -1;
 		int commaIndex = -1;
-		
+
+		char previousC = 0;
 		for (int i = 0; i < _str.length(); ++i) {
 			char c = _str.charAt(i);
+
+			if (previousC != '\\') {
 			
-			if ((stack.size() > 0) && (c == stack.peek())) {
-				if (stack.size() == 1) {
-					commaIndex = i;
-					if (isId(beginIndex, colonIndex, id)) {
-						return getValue(colonIndex, commaIndex);
+				if ((stack.size() > 0) && (c == stack.peek())) {
+					if (stack.size() == 1) {
+						commaIndex = i;
+						if (isId(beginIndex, colonIndex, id)) {
+							return getValue(colonIndex, commaIndex);
+						}
+						beginIndex = colonIndex = commaIndex = -1;
 					}
-					beginIndex = colonIndex = commaIndex = -1;
-				}
-				stack.pop();			
-			} else if (c == '{') {
-				stack.push('}');
-			} else if (c == '[') {
-				stack.push(']');
-			} else if (c == '"') {
-				if (stack.size() == 1) {
-					if (beginIndex == -1) {
+					stack.pop();			
+				} else if (c == '{') {
+					stack.push('}');
+				} else if (c == '[') {
+					stack.push(']');
+				} else if (c == '"') {
+					if (stack.size() == 1) {
+						if (beginIndex == -1) {
+							beginIndex = i;
+						}
+					}
+					stack.push('"');
+				} else if (stack.size() == 1) { //parse only level 1, else must recurse!
+					if ((beginIndex == -1) && (Character.isWhitespace(c))) {
+						; //just skip whitespace
+					} else if (beginIndex == -1) {
 						beginIndex = i;
+					} else if (c == ':') {
+						colonIndex = i;	
+					} else if (c == ',') {
+						commaIndex = i;
+						if (isId(beginIndex, colonIndex, id)) {
+							return getValue(colonIndex, commaIndex);
+						}
+						beginIndex = colonIndex = commaIndex = -1;
 					}
 				}
-				stack.push('"');
-			} else if (stack.size() == 1) { //parse only level 1, else must recurse!
-				if ((beginIndex == -1) && (Character.isWhitespace(c))) {
-					; //just skip whitespace
-				} else if (beginIndex == -1) {
-					beginIndex = i;
-				} else if (c == ':') {
-					colonIndex = i;	
-				} else if (c == ',') {
-					commaIndex = i;
-					if (isId(beginIndex, colonIndex, id)) {
-						return getValue(colonIndex, commaIndex);
-					}
-					beginIndex = colonIndex = commaIndex = -1;
-				}
+				
 			}
+			previousC = c;
 		}
 		return null;
 	}
